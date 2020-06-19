@@ -1,7 +1,11 @@
 package com.radiant.pokemon
 
 import android.Manifest.permission.ACCESS_FINE_LOCATION
+import android.content.Context
 import android.content.pm.PackageManager
+import android.location.Location
+import android.location.LocationListener
+import android.location.LocationManager
 import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
@@ -15,6 +19,7 @@ import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.MarkerOptions
+import java.lang.Exception
 
 class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
@@ -28,7 +33,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
                 .findFragmentById(R.id.map) as SupportMapFragment
         mapFragment.getMapAsync(this)
 
-    checkPermmision()
+        checkPermmision()
 
     }
 
@@ -46,6 +51,13 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
     fun getUserLocation(){
         Toast.makeText(this, "User location access on", Toast.LENGTH_LONG).show()
         //TODO: Will implement later
+
+        var myLocation = MyLocationListener()
+        var locationManager = getSystemService(Context.LOCATION_SERVICE) as LocationManager
+
+        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 3, 3f, myLocation)
+        var myThread = myThread()
+        myThread.start()
     }
 
     override fun onRequestPermissionsResult(
@@ -77,12 +89,59 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         mMap = googleMap
 
         // Add a marker in Sydney and move the camera
-        val sydney = LatLng(-34.0, 151.0)
-        mMap.addMarker(MarkerOptions()
-            .position(sydney)
-            .title("Me")
-            .snippet("here is my location")
-            .icon(BitmapDescriptorFactory.fromResource(R.drawable.mario)))
-        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(sydney, 14f))
+    }
+    var location: Location? = null
+
+    inner class  MyLocationListener:LocationListener{
+
+        constructor(){
+            location= Location("Start")
+            location!!.longitude = 0.0
+            location!!.latitude = 0.0
+        }
+        override fun onLocationChanged(loc: Location?) {
+            location = loc
+        }
+
+        override fun onStatusChanged(provider: String?, status: Int, extras: Bundle?) {
+            TODO("Not yet implemented")
+        }
+
+        override fun onProviderEnabled(provider: String?) {
+            TODO("Not yet implemented")
+        }
+
+        override fun onProviderDisabled(provider: String?) {
+            TODO("Not yet implemented")
+        }
+
+    }
+
+    inner class myThread:Thread{
+        constructor():super(){
+
+        }
+
+        override  fun run(){
+            while (true){
+                try {
+                    runOnUiThread {
+                        mMap!!.clear()
+                        val sydney = LatLng(location!!.latitude, location!!.longitude)
+                        mMap.addMarker(
+                            MarkerOptions()
+                                .position(sydney)
+                                .title("Me")
+                                .snippet("here is my location")
+                                .icon(BitmapDescriptorFactory.fromResource(R.drawable.mario))
+                        )
+                        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(sydney, 14f))
+                    }
+                    Thread.sleep(1000)
+                }catch (e: Exception){
+
+                }
+            }
+        }
     }
 }
