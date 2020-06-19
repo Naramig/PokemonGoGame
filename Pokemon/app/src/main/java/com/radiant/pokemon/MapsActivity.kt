@@ -1,7 +1,12 @@
 package com.radiant.pokemon
 
+import android.Manifest.permission.ACCESS_FINE_LOCATION
+import android.content.pm.PackageManager
+import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.widget.Toast
+import androidx.core.app.ActivityCompat
 
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
@@ -22,8 +27,43 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         val mapFragment = supportFragmentManager
                 .findFragmentById(R.id.map) as SupportMapFragment
         mapFragment.getMapAsync(this)
+
+    checkPermmision()
+
     }
 
+    var ACCESSLOCATION = 123
+    fun checkPermmision(){
+        if(Build.VERSION.SDK_INT>=23){
+            if(ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED){
+                requestPermissions(arrayOf(android.Manifest.permission.ACCESS_FINE_LOCATION), ACCESSLOCATION)
+                return
+            }
+        }
+        getUserLocation()
+    }
+
+    fun getUserLocation(){
+        Toast.makeText(this, "User location access on", Toast.LENGTH_LONG).show()
+        //TODO: Will implement later
+    }
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
+        when(requestCode){
+            ACCESSLOCATION->{
+                if(grantResults[0] == PackageManager.PERMISSION_GRANTED){
+                    getUserLocation()
+                }else{
+                    Toast.makeText(this, "We cannot access to your location", Toast.LENGTH_LONG).show()
+                }
+            }
+        }
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+    }
     /**
      * Manipulates the map once available.
      * This callback is triggered when the map is ready to be used.
