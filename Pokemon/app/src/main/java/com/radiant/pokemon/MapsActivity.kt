@@ -9,6 +9,7 @@ import android.location.LocationManager
 import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.view.View
 import android.widget.Toast
 import androidx.core.app.ActivityCompat
 
@@ -24,6 +25,10 @@ import java.lang.Exception
 class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
     private lateinit var mMap: GoogleMap
+    var playerPower: Double = 0.0
+    var location: Location? = null
+    var ACCESSLOCATION = 123
+    var listPokemons=ArrayList<Pokemon>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -34,10 +39,10 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         mapFragment.getMapAsync(this)
 
         checkPermmision()
+        LoadPokemons()
 
     }
 
-    var ACCESSLOCATION = 123
     fun checkPermmision(){
         if(Build.VERSION.SDK_INT>=23){
             if(ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED){
@@ -50,7 +55,6 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
     fun getUserLocation(){
         Toast.makeText(this, "User location access on", Toast.LENGTH_LONG).show()
-        //TODO: Will implement later
 
         var myLocation = MyLocationListener()
         var locationManager = getSystemService(Context.LOCATION_SERVICE) as LocationManager
@@ -76,21 +80,10 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         }
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
     }
-    /**
-     * Manipulates the map once available.
-     * This callback is triggered when the map is ready to be used.
-     * This is where we can add markers or lines, add listeners or move the camera. In this case,
-     * we just add a marker near Sydney, Australia.
-     * If Google Play services is not installed on the device, the user will be prompted to install
-     * it inside the SupportMapFragment. This method will only be triggered once the user has
-     * installed Google Play services and returned to the app.
-     */
+
     override fun onMapReady(googleMap: GoogleMap) {
         mMap = googleMap
-
-        // Add a marker in Sydney and move the camera
     }
-    var location: Location? = null
 
     inner class  MyLocationListener:LocationListener{
 
@@ -117,31 +110,81 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
     }
 
+    var userLocation: LatLng = LatLng(0.0, 0.0)
+
     inner class myThread:Thread{
+
         constructor():super(){
 
         }
 
         override  fun run(){
+            //Wait until the phone gets user's location
+            while(location!!.latitude == 0.0 && location!!.longitude == 0.0){}
+
+            runOnUiThread() {
+                setUserLocationToTheMap()
+                setCameraToTheUserLocation()
+            }
             while (true){
                 try {
                     runOnUiThread {
                         mMap!!.clear()
-                        val sydney = LatLng(location!!.latitude, location!!.longitude)
-                        mMap.addMarker(
-                            MarkerOptions()
-                                .position(sydney)
-                                .title("Me")
-                                .snippet("here is my location")
-                                .icon(BitmapDescriptorFactory.fromResource(R.drawable.mario))
-                        )
-                        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(sydney, 14f))
+                        setUserLocationToTheMap()
+                        //show pokemons
+                        setPokemonLocationToTheMap()
                     }
                     Thread.sleep(1000)
                 }catch (e: Exception){
-
+                    Toast.makeText(applicationContext, e.toString(), Toast.LENGTH_LONG).show()
                 }
             }
         }
+
+        private fun setPokemonLocationToTheMap() {
+            for (i in 0..listPokemons.size - 1) {
+                var newPokemon = listPokemons[i]
+
+                if (newPokemon.isCatch == false) {
+                    val pokemon = LatLng(newPokemon.location!!.latitude, newPokemon.location!!.longitude)
+                    mMap.addMarker(
+                        MarkerOptions()
+                            .position(pokemon)
+                            .title(newPokemon.name)
+                            .snippet(newPokemon.desc)
+                            .icon(BitmapDescriptorFactory.fromResource(newPokemon.img!!))
+                    )
+                    if(location!!.distanceTo(newPokemon.location) < 2){
+                        newPokemon.isCatch = true
+                        listPokemons[i] = newPokemon
+                        playerPower += newPokemon.power!!
+                        Toast.makeText(applicationContext, "You catch new Pokemon. You power = " + playerPower.toString(), Toast.LENGTH_LONG).show()
+                    }
+                }
+            }
+        }
+
+        private fun setUserLocationToTheMap() {
+            userLocation = LatLng(location!!.latitude, location!!.longitude)
+            mMap.addMarker(
+                MarkerOptions()
+                    .position(userLocation)
+                    .title("Me")
+                    .snippet("here is my location")
+                    .icon(BitmapDescriptorFactory.fromResource(R.drawable.mario))
+            )
+        }
+    }
+
+    fun setCameraToTheUserLocation(){
+        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(userLocation, 25f))
+    }
+
+    fun LoadPokemons(){
+        listPokemons.add(Pokemon(R.drawable.charmander, "Charmander", "Test Pokemon", 5.0, 42.885021, 74.572400 ))
+    }
+
+    fun goToTheUserLocationButtonListener(view: View) {
+        setCameraToTheUserLocation()
     }
 }
