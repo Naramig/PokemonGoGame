@@ -8,3 +8,4 @@ If you want to add Pokemons to your place, add specific information to <i>LoadPo
 
 <p align="center">
   <https://github.com/Naramig/PokemonGoGame/blob/master/photo5440847880786128252.jpg" width="350" title="screen">
+</p>
